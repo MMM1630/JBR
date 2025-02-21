@@ -4,20 +4,20 @@ from models import Patients
 class PatientsSerializer(serializers.ModelSerializer):
     class Meta:
         models = Patients
-        fields = "__all__"
+        fields = ("name", 'surname', 'img', 'age', 'disease', 'urgency', 'sum', 'collected', 'active', 'description')
 
 class AboutUsSerializer(serializers.ModelSerializer):
     class Meta:
-        fields = "__all__"
+        fields = ('img', 'title', 'description')
 
 class GuaranteeSerializers(serializers.ModelSerializer):
     class Meta:
-        fields = "__all__"
+        fields = ('duty', 'duty_file')
 
 class FoundersSerializers(serializers.ModelSerializer):
     class Meta:
-        fields = "__all__"
+        fields = ('name', 'surname', 'img', 'title')
 
 class BankDetailsSerializers(serializers.ModelSerializer):
     class Meta:
-        fields = "__all__"
+        fields = ('MbankImg', 'Mbank', 'ObankImg', 'Obank', 'CompanionImg', 'Companion', 'BakaiBankImg', 'BakaiBank')
