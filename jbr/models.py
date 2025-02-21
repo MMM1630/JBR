@@ -1,7 +1,6 @@
 from django.db import models
 from ckeditor_uploader.fields import RichTextUploadingField
-
-
+from jbr.choices import CHOICES_PATIENTS
 
 class Patients(models.Model):
     name = models.CharField('Имя', max_length=20)
@@ -9,6 +8,7 @@ class Patients(models.Model):
     img = models.ImageField('Фото')
     age = models.IntegerField('Возраст')
     disease = models.CharField('Заболевание', max_length=100)
+    urgency = models.CharField('Насколько срочно', choices=CHOICES_PATIENTS)
     sum = models.CharField('Сумма сбора', max_length=100)
     collected = models.CharField('Собранная сумма', max_length=100)
     active = models.BooleanField('Активно для сбора', default=False)
@@ -46,9 +46,13 @@ class Founders(models.Model):
         verbose_name_plural = 'Основатели'
 
 class BankDetails(models.Model):
+    MbankImg = models.ImageField('Мбанк лого')
     Mbank = models.CharField('Мбанк', max_length=20)
+    ObankImg = models.ImageField('ОБанк лого')
     Obank = models.CharField('ОБанк', max_length=20)
+    CompanionImg = models.ImageField('Компанион лого')
     Companion = models.CharField('Компанион', max_length=20)
+    BakaiBankImg = models.ImageField('Бакай Банк лого')
     BakaiBank =models.CharField('Бакай Банк', max_length=20)
 
     class Meta:

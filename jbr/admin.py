@@ -17,7 +17,7 @@ class PostAdmin(admin.ModelAdmin):
 @admin.register(Patients)
 class PatientsAdmin(admin.ModelAdmin):
     description = forms.CharField(widget=CKEditorUploadingWidget())
-    list_display = ("name", "surname", "age", "disease", "sum", "collected", "active", "description")
+    list_display = ("name", "surname", "age", "disease", "urgency","sum", "collected", "active", "description")
 
 @admin.register(AboutUs)
 class AboutUsAdmin(admin.ModelAdmin):
@@ -35,4 +35,4 @@ class FoundersAdmin(admin.ModelAdmin):
 
 @admin.register(BankDetails)
 class BankDetails(admin.ModelAdmin):
-    list_display = ("Mbank", "Obank", "Companion", "BakaiBank")
+    list_display = ("MbankImg", "Mbank", "ObankImg", "Obank", "CompanionImg", "Companion", "BakaiBankImg", "BakaiBank")
