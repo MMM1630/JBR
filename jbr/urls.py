@@ -1,16 +1,15 @@
 from django.urls import path
-from config import settings
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
-from jbr.views import PatientsView, AboutUsView, GuaranteeView, FoundersView, BankDetailsView
-from django.conf.urls.static import static
+from jbr.views import AboutUsView, GuaranteeView, FoundersView, VolunteerView, \
+    DokumentView, NeedyView, NewsView, NeedyProfileView,ContactsView
 from rest_framework import permissions
-
+# from .sitemap import SitemapView
 
 
 schema_view = get_schema_view(
     openapi.Info(
-        title="Жакшылыктын биримдик реестрери",
+        title="ЖБР.kg",
         default_version='v1',
         description="Документация Жакшылыктын биримдик реестрери",
         terms_of_service="https://www.google.com/policies/terms/",
@@ -23,13 +22,15 @@ schema_view = get_schema_view(
 
 
 urlpatterns = [
-    path("patients", PatientsView.as_view()),
-    path("about_us", AboutUsView.as_view()),
-    path("guarantee", GuaranteeView.as_view()),
-    path("founders", FoundersView.as_view()),
-    path("bank_details", BankDetailsView.as_view()),
-    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0)),
+    path("Нуждающийся", NeedyView.as_view()),
+    path("О нас", AboutUsView.as_view()),
+    path("Гарантия", GuaranteeView.as_view()),
+    path("Основатели", FoundersView.as_view()),
+    path('Валантеры', VolunteerView.as_view()),
+    path('Сертификаты', DokumentView.as_view()),
+    path('Новости', NewsView.as_view()),
+    path('Личный кабинет', NeedyProfileView.as_view()),
+    path('Контакты', ContactsView.as_view()),
+    path('ЖБР', schema_view.with_ui('swagger', cache_timeout=0)),
+    # path("sitemap.xml", SitemapView.as_view()),
 ]
-
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
