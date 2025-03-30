@@ -1,14 +1,12 @@
-from django.urls import path
+from django.urls import path, include
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
-from jbr.views import AboutUsView, GuaranteeView, FoundersView, VolunteerView, \
-    DokumentView, NeedyView, NewsView, NeedyProfileView,ContactsView
 from rest_framework import permissions
-# from .sitemap import SitemapView
-
+from rest_framework.routers import DefaultRouter
+from jbr.views import AboutUsView, GuaranteeView, FoundersView, VolunteerView, DokumentView, NewsView, NeedyProfileView, VolunteerView, VolunteerAssignment, ContactsView, HelpedNeedyView, BankView, ApplicationView
 
 schema_view = get_schema_view(
-    openapi.Info(
+    openapi.Info( 
         title="ЖБР.kg",
         default_version='v1',
         description="Документация Жакшылыктын биримдик реестрери",
@@ -20,17 +18,22 @@ schema_view = get_schema_view(
     permission_classes=[permissions.AllowAny],
 )
 
+router = DefaultRouter()
+
+router.register(r'needy_profile', NeedyProfileView, basename='needy_profile')
+router.register(r'volunteer_assignments', VolunteerAssignment, basename='volunteer_assignment')
 
 urlpatterns = [
-    path("Нуждающийся", NeedyView.as_view()),
-    path("О нас", AboutUsView.as_view()),
-    path("Гарантия", GuaranteeView.as_view()),
-    path("Основатели", FoundersView.as_view()),
-    path('Валантеры', VolunteerView.as_view()),
-    path('Сертификаты', DokumentView.as_view()),
-    path('Новости', NewsView.as_view()),
-    path('Личный кабинет', NeedyProfileView.as_view()),
-    path('Контакты', ContactsView.as_view()),
-    path('ЖБР', schema_view.with_ui('swagger', cache_timeout=0)),
-    # path("sitemap.xml", SitemapView.as_view()),
+    path("AboutUs", AboutUsView.as_view()),
+    path("Guarentee", GuaranteeView.as_view()),
+    path("Founders", FoundersView.as_view()),
+    path('Volunteer', VolunteerView.as_view()),
+    path('Dokument', DokumentView.as_view()),
+    path('News', NewsView.as_view()),
+    path('Contacts', ContactsView.as_view()),
+    path('Helped_Needy', HelpedNeedyView.as_view()),
+    path("Bank", BankView.as_view()),
+    path("Aplication", ApplicationView.as_view()),
+    path('JBR', schema_view.with_ui('swagger', cache_timeout=0)),
+    path('api/', include(router.urls)),
 ]

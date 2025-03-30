@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <script type="module">
+import RefreshRuntime from "/@react-refresh"
+RefreshRuntime.injectIntoGlobalHook(window)
+window.$RefreshReg$ = () => {}
+window.$RefreshSig$ = () => (type) => type
+window.__vite_plugin_react_preamble_installed__ = true
+</script>
+
+    <script type="module" src="/@vite/client"></script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <title>Navis Devs</title>
+    <meta name="description" content="Мы команда - Navis Devs, превращаем ваши идеи в мощные веб-сайты и мобильные приложения. Воплощаем мечты в реальность с помощью технологий и креатива!"/>
+    <meta name="keywords" content="разработка веб-сайтов, мобильных приложении, IT-решении, стартапы, digital-продукты, программирование, UX/UI дизайны и технология будущего"/>
+
+    <meta name="theme-color" content="#0A0A0A">
+
+    <meta property="og:title" content="Navis Devs – IT-компания, которая воплощает ваши мечты в реальность"/>
+    <meta property="og:description" content="Ваши идеи + наши услуги = готовый цифровой продукт. Мы создаём веб-сайты и мобильные приложения, которые меняют будущее."/>
+    <meta property="og:url" content="https://navisdevs.com"/>
+    <meta property="og:image" content="https://navisdevs.com/assets/preview.jpg"/>
+    <meta property="og:type" content="website"/>
+
+    <link rel="icon" type="image/png+xml" href="/favicon.png?v=2"/>
+    <link rel="apple-touch-icon" href="/favicon.png">
+
+    <link rel="canonical" href="https://navisdevs.ru"/>
+</head>
+<body> 
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx?t=1740810269128"></script>
+</body>
+</html>

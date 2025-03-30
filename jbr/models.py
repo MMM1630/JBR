@@ -1,27 +1,25 @@
 from django.db import models
 from ckeditor_uploader.fields import RichTextUploadingField
-from django.contrib.auth.models import AbstractUser
+import random
+import string
+from django.contrib.auth.models import AbstractUser, Group, Permission
+from django.contrib.auth import get_user_model
 
 
-class Needy(models.Model):
-    name = models.CharField('Имя', max_length=20)
-    surname = models.CharField('Фамилия', max_length=40)
-    img = models.ImageField('Фото')
-    age = models.IntegerField('Возраст')
-    disease = models.CharField('Заболевание', max_length=100)
-    treatment = models.CharField("Требуется лечение", max_length=255)
-    sum = models.CharField('Сумма сбора', max_length=100)
-    collected = models.CharField('Собранная сумма', max_length=100)
-    data = models.CharField('До какого числа сбор ', max_length=20)
-    active = models.BooleanField('Сбор', default=True)
-    description = RichTextUploadingField('Подробнее', config_name='default')
+User = get_user_model()
 
-    class Meta:
-        verbose_name = 'Нуждающийся'
-        verbose_name_plural = 'Нуждающийся'
 
-    def __str__(self):
-        return f"{self.name} {self.surname} - {'Сбор открыт' if self.active else 'Сбор закрыт'}"
+class CustomUser(AbstractUser):
+    username = None 
+    phone_number = models.CharField("Номер телефона", max_length=15, unique=True)
+
+    groups = models.ManyToManyField(Group, related_name="customuser_groups")
+    user_permissions = models.ManyToManyField(Permission, related_name="customuser_permissions")
+
+    USERNAME_FIELD = "phone_number"
+    REQUIRED_FIELDS = []
+
+
 
 class AboutUs(models.Model):
     img = models.ImageField('Логотип')
@@ -50,34 +48,6 @@ class Founders(models.Model):
         verbose_name = 'Основатели'
         verbose_name_plural = 'Основатели'
 
-# class BankDetails(models.Model):
-#     needy = models.ForeignKey(Needy, on_delete=models.CASCADE, verbose_name="Банковские реквезиты для")
-#     MbankImg = models.ImageField('Мбанк лого', null=True, blank=True)
-#     Mbank = models.CharField('Мбанк', max_length=20)
-#     ObankImg = models.ImageField('ОБанк лого', null=True, blank=True)
-#     Obank = models.CharField('ОБанк', max_length=20)
-#     CompanionImg = models.ImageField('Компанион лого', null=True, blank=True)
-#     Companion = models.CharField('Компанион', max_length=20)
-#     BakaiBankImg = models.ImageField('Бакай Банк лого', null=True, blank=True)
-#     BakaiBank =models.CharField('Бакай Банк', max_length=20)
-#
-#     class Meta:
-#         verbose_name = 'Банковские реквезиты'
-#         verbose_name_plural = 'Банковские реквезиты'
-
-
-class Volunteer(models.Model):
-    name = models.CharField('Имя', max_length=20)
-    surname = models.CharField('Фамилия', max_length=40)
-    img = models.ImageField('Фото', upload_to='volunteers_photos/')
-
-    class Meta:
-        verbose_name = 'Валантеры'
-        verbose_name_plural = 'Валантеры'
-
-    def __str__(self):
-        return f"{self.name} {self.surname}"
-
 
 class Dokument(models.Model):
     certificate = models.ImageField("Сертификаты")
@@ -102,22 +72,89 @@ class News(models.Model):
         return f"{self.title}"
 
 
+def generate_password():
+    return ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+
 class NeedyProfile(models.Model):
-    patients = models.OneToOneField(Needy, on_delete=models.CASCADE, verbose_name="Личный кабинет")
-    diagnosis = models.CharField("Диагноз", max_length=255)
-    treatment = models.CharField("Требуется лечение", max_length=255)
-    photo = models.ImageField(upload_to="needy_profiles/", blank=True, null=True, verbose_name="Фото")
-    sum = models.DecimalField(max_digits=50, decimal_places=2, verbose_name="Сумма для сбора")
-    collected = models.DecimalField(max_digits=50, decimal_places=2, verbose_name="Собранная сумма")
-    volunteers = models.ManyToManyField("Volunteer", blank=True, verbose_name="Волонтёры")
-    is_closed = models.BooleanField(default=False)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
+    phone_number = models.CharField("Номер телефона", max_length=15, unique=True, null=True, blank=True)
+    age = models.IntegerField("Возраст", null=True, blank=True)
+    diagnosis = models.CharField("Диагноз", max_length=255, null=True, blank=True)
+    treatment = models.CharField("Требуется лечение", max_length=255, null=True, blank=True)
+    sum = models.IntegerField(verbose_name="Сумма для сбора", null=True, blank=True)
+    collected = models.IntegerField(verbose_name="Собранная сумма", null=True, blank=True)
+    active = models.BooleanField("Сбор", default=True, null=True, blank=True)
+    password = models.CharField("Пароль", max_length=8, default=generate_password, editable=False)
+
+
+    def save(self, *args, **kwargs):
+        if not self.user:  
+            username = f"user_{self.phone_number}"  
+            password = generate_password()
+            user = User.objects.create_user(username=username, password=password)
+            self.user = user  
+            self.password = password  
+        super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.patients} - {self.sum} {self.collected}"
+        return f"Личный кабинет ({self.user})"
+    
 
     class Meta:
-        verbose_name = 'Личный кабинет'
-        verbose_name_plural = 'Личный кабинет'
+        verbose_name = "Личный кабинет для нуждающегося"
+        verbose_name_plural = "Личный кабинет для нуждающегося"
+
+
+class NeedyProfilePhoto(models.Model):
+    needy_profile = models.ForeignKey(NeedyProfile, on_delete=models.CASCADE, verbose_name="Профиль")
+    photo = models.ImageField(upload_to="needy_profiles/photos/", verbose_name="Фото")
+
+
+    
+    class Meta:
+        verbose_name = "Фото профиля"
+        verbose_name_plural = "Фотографии профиля"
+
+    
+class DokumentsNeedy(models.Model):
+    needy_profile = models.ForeignKey(
+        NeedyProfile, on_delete=models.CASCADE, verbose_name="Документы нуждающегося", related_name="documents"
+    )
+    dokument = models.FileField(upload_to="needy_profiles/dokuments/", verbose_name="Документ")
+
+
+    def __str__(self):
+        return f"Документы для {self.needy_profile.phone_number}"
+
+    class Meta:
+        verbose_name = "Документы нуждающегося"
+        verbose_name_plural = "Документы нуждающегося"
+
+
+class Volunteer(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
+    name = models.CharField('Имя', max_length=20)
+    surname = models.CharField('Фамилия', max_length=40)
+    img = models.ImageField('Фото', upload_to='volunteers_photos/')
+    needy_profile = models.ForeignKey(NeedyProfile, on_delete=models.CASCADE, related_name="volunteers", null=True, blank=True)
+
+
+    class Meta:
+        verbose_name = 'Валантеры'
+        verbose_name_plural = 'Валантеры'
+
+    def __str__(self):
+        return f"{self.name} {self.surname}"
+
+
+class VolunteerAssignment(models.Model):
+    needy_profile = models.ForeignKey(NeedyProfile, on_delete=models.CASCADE)
+    volunteer_profile = models.ForeignKey(Volunteer, on_delete=models.CASCADE)
+    assigned_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=20, default='assigned')  
+
+    def __str__(self):
+        return f"Volunteer {self.volunteer_profile.name} assigned to {self.needy_profile.name}"
 
 
 class Contacts(models.Model):
@@ -132,3 +169,44 @@ class Contacts(models.Model):
 
     def __str__(self):
         return f"{self.phone_number} {self.email}"
+
+
+class HelpedNeedy(models.Model):
+    img = models.ImageField(upload_to="helped_needy/",  verbose_name="Фото")
+    name = models.CharField("Имя", max_length=255)
+    surname = models.CharField("Фамилия", max_length=255)
+    age = models.IntegerField('Возраст')
+    diagnosis = models.CharField("Диагноз", max_length=255)
+    treatment = models.CharField("Лечение", max_length=255)
+    photos = models.ManyToManyField(NeedyProfilePhoto, related_name='helped_needy_photos', blank=True)
+
+
+    class Meta:
+        verbose_name = "Кому помогли"
+        verbose_name_plural = "Кому помогли"
+
+    def __str__(self):
+        return f"{self.name} {self.surname}"
+
+
+
+class Bank(models.Model):
+    urls = models.URLField("Ссылка на банк")
+    qr_code = models.ImageField("QR код нужадющегося")
+
+    class Meta:
+        verbose_name = "Реквизиты нуждающегося"
+        verbose_name_plural = "Реквизиты нуждающегося"
+
+    def __str__(self):
+        return f"{self.qr_code}"
+
+
+class Application_needy(models.Model):
+    name = models.CharField("Имя", max_length=255)
+    phone_number = models.CharField("Номер телефона", max_length=255)
+
+
+    class Meta:
+        verbose_name = "Заявка нуждающегося"
+        verbose_name_plural = "Заявка нуждающегося"
