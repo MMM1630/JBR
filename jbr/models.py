@@ -4,6 +4,8 @@ import random
 import string
 from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.contrib.auth import get_user_model
+from django.db.models import F
+
 
 
 User = get_user_model()
@@ -78,27 +80,32 @@ def generate_password():
 class NeedyProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
     phone_number = models.CharField("Номер телефона", max_length=15, unique=True, null=True, blank=True)
+    name = models.CharField("Имя", max_length=20)
+    surname = models.CharField("Фамилия", max_length=20)
     age = models.IntegerField("Возраст", null=True, blank=True)
     diagnosis = models.CharField("Диагноз", max_length=255, null=True, blank=True)
     treatment = models.CharField("Требуется лечение", max_length=255, null=True, blank=True)
     sum = models.IntegerField(verbose_name="Сумма для сбора", null=True, blank=True)
+    sum_usd = models.FloatField("Сумма в долларах", null=True, blank=True, editable=False)
     collected = models.IntegerField(verbose_name="Собранная сумма", null=True, blank=True)
     active = models.BooleanField("Сбор", default=True, null=True, blank=True)
     password = models.CharField("Пароль", max_length=8, default=generate_password, editable=False)
 
-
     def save(self, *args, **kwargs):
-        if not self.user:  
+        if not self.user and self.phone_number:  
             username = f"user_{self.phone_number}"  
             password = generate_password()
             user = User.objects.create_user(username=username, password=password)
             self.user = user  
             self.password = password  
-        super().save(*args, **kwargs)
 
-    def __str__(self):
-        return f"Личный кабинет ({self.user})"
-    
+        if self.sum:
+            exchange_rate = 0.012 
+            self.sum_usd = round(self.sum * exchange_rate, 2)
+        else:
+            self.sum_usd = None
+
+        super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = "Личный кабинет для нуждающегося"
@@ -108,8 +115,6 @@ class NeedyProfile(models.Model):
 class NeedyProfilePhoto(models.Model):
     needy_profile = models.ForeignKey(NeedyProfile, on_delete=models.CASCADE, verbose_name="Профиль")
     photo = models.ImageField(upload_to="needy_profiles/photos/", verbose_name="Фото")
-
-
     
     class Meta:
         verbose_name = "Фото профиля"
@@ -117,9 +122,7 @@ class NeedyProfilePhoto(models.Model):
 
     
 class DokumentsNeedy(models.Model):
-    needy_profile = models.ForeignKey(
-        NeedyProfile, on_delete=models.CASCADE, verbose_name="Документы нуждающегося", related_name="documents"
-    )
+    needy_profile = models.ForeignKey(NeedyProfile, on_delete=models.CASCADE, verbose_name="Документы нуждающегося")
     dokument = models.FileField(upload_to="needy_profiles/dokuments/", verbose_name="Документ")
 
 
@@ -132,7 +135,6 @@ class DokumentsNeedy(models.Model):
 
 
 class Volunteer(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField('Имя', max_length=20)
     surname = models.CharField('Фамилия', max_length=40)
     img = models.ImageField('Фото', upload_to='volunteers_photos/')
@@ -178,6 +180,8 @@ class HelpedNeedy(models.Model):
     age = models.IntegerField('Возраст')
     diagnosis = models.CharField("Диагноз", max_length=255)
     treatment = models.CharField("Лечение", max_length=255)
+    sum = models.IntegerField(verbose_name="Сумма для сбора", null=True, blank=True)
+    collected = models.IntegerField(verbose_name="Собранная сумма", null=True, blank=True)
     photos = models.ManyToManyField(NeedyProfilePhoto, related_name='helped_needy_photos', blank=True)
 
 
@@ -188,6 +192,14 @@ class HelpedNeedy(models.Model):
     def __str__(self):
         return f"{self.name} {self.surname}"
 
+
+class HelpedNeedyPhoto(models.Model):
+    helped_needy = models.ForeignKey(HelpedNeedy, on_delete=models.CASCADE,verbose_name="Фото нужадющегося")
+    photo = models.ImageField(upload_to="helped_needy_profiles/photos/", verbose_name="Фото")
+
+    class Meta:
+        verbose_name = "Фото нуждающегося"
+        verbose_name_plural = "Фото нуждающегося"
 
 
 class Bank(models.Model):
@@ -210,3 +222,46 @@ class Application_needy(models.Model):
     class Meta:
         verbose_name = "Заявка нуждающегося"
         verbose_name_plural = "Заявка нуждающегося"
+
+
+class NeedyDisplay(models.Model):
+    needy_profile = models.ForeignKey(NeedyProfile, on_delete=models.CASCADE, null=True, blank=True)
+    name = models.CharField("Имя", max_length=20)
+    surname = models.CharField("Фамилия", max_length=20)
+    age = models.IntegerField("Возраст")
+    diagnosis = models.CharField("Диагноз", max_length=255, null=True, blank=True)
+    treatment = models.CharField("Требуется лечение", max_length=255, null=True, blank=True)
+    sum = models.IntegerField(verbose_name="Сумма для сбора", null=True, blank=True)
+    sum_usd = models.FloatField("Сумма в долларах", null=True, blank=True)  
+    collected = models.IntegerField(verbose_name="Собранная сумма", null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        if self.sum:
+            exchange_rate = 0.012 
+            self.sum_usd = round(self.sum * exchange_rate, 2)
+        else:
+            self.sum_usd = None
+        super().save(*args, **kwargs)
+
+
+    class Meta:
+        verbose_name = "Дисплей нуждающегося"
+        verbose_name_plural = "Дисплей нуждающегося"
+
+
+class NeedyDisplayPhoto(models.Model):
+    needy_display = models.ForeignKey(NeedyDisplay, on_delete=models.CASCADE, related_name="photos")
+    photo = models.ImageField("Фотография", upload_to="needy_display/photos/")
+
+    class Meta:
+        verbose_name = "Фото дисплея"
+        verbose_name_plural = "Фотографии дисплея"
+
+
+class NeedyDisplayDocument(models.Model):
+    needy_display = models.ForeignKey(NeedyDisplay, on_delete=models.CASCADE, related_name="documents")
+    document = models.FileField("Документ", upload_to="needy_display/documents/")
+
+    class Meta:
+        verbose_name = "Документ дисплея"
+        verbose_name_plural = "Документы дисплея"

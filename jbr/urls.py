@@ -3,7 +3,7 @@ from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions
 from rest_framework.routers import DefaultRouter
-from jbr.views import AboutUsView, GuaranteeView, FoundersView, VolunteerView, DokumentView, NewsView, NeedyProfileView, VolunteerView, VolunteerAssignment, ContactsView, HelpedNeedyView, BankView, ApplicationView
+from jbr.views import *
 
 schema_view = get_schema_view(
     openapi.Info( 
@@ -19,7 +19,6 @@ schema_view = get_schema_view(
 )
 
 router = DefaultRouter()
-
 router.register(r'needy_profile', NeedyProfileView, basename='needy_profile')
 router.register(r'volunteer_assignments', VolunteerAssignment, basename='volunteer_assignment')
 
@@ -34,6 +33,9 @@ urlpatterns = [
     path('Helped_Needy', HelpedNeedyView.as_view()),
     path("Bank", BankView.as_view()),
     path("Aplication", ApplicationView.as_view()),
+    path("Needy_Display", NeedyDisplayView.as_view()),
+    path('add-amount/', AddAmountView.as_view()),
+
     path('JBR', schema_view.with_ui('swagger', cache_timeout=0)),
     path('api/', include(router.urls)),
 ]

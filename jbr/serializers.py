@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from jbr.models import AboutUs, Guarantee, Founders, Volunteer, Dokument, News, NeedyProfile, Contacts, HelpedNeedy, Bank,  Application_needy, NeedyProfile, NeedyProfilePhoto, DokumentsNeedy, VolunteerAssignment
+from jbr.models import AboutUs, Guarantee, Founders, Volunteer, Dokument, News, NeedyProfile, Contacts, HelpedNeedy, Bank,  Application_needy, NeedyProfile, NeedyProfilePhoto, DokumentsNeedy, VolunteerAssignment, NeedyDisplay, NeedyDisplayDocument, NeedyDisplayPhoto 
 from django.core.exceptions import ValidationError
 from django.contrib.auth.password_validation import validate_password
 from django.utils.translation import gettext_lazy as _
@@ -26,7 +26,7 @@ class FoundersSerializers(serializers.ModelSerializer):
 class VolunteerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Volunteer
-        fields = ['id', 'user', 'name', 'surname', 'img']
+        fields = ['id',  'name', 'surname', 'img']
         extra_kwargs = {
             'name': {'help_text': 'Имя волонтера'},
             'surname': {'help_text': 'Фамилия волонтера'},
@@ -77,7 +77,7 @@ class HelpedNeedySerializers(serializers.ModelSerializer):
         return helped_needy
     
     def get_photos(self, obj):
-        return [photo.photo.url for photo in obj.photos.all()]
+        return ["http://212.193.24.72" + photo.photo.url for photo in obj.photos.all()]
 
 
 class BankSerializers(serializers.ModelSerializer):
@@ -114,19 +114,22 @@ class NeedyProfileSerializers(serializers.ModelSerializer):
         request = self.context.get('request')
         img = Volunteer.objects.filter(needy_profile=obj)
         return [{"volunteer_url": request.build_absolute_uri(img.img.url) } for img in img if img.img] 
+    
+    def update(self, instance, validated_data):
+        instance.collected = validated_data.get('collected', instance.collected)
+        instance.save()
+        return instance
 
 
 class NeedyProfilePhotoSerializers(serializers.ModelSerializer):
     img = serializers.ImageField(source="photo.url")
-
     class Meta:
         model = NeedyProfilePhoto
-        fields = ["img"]  
+        fields = "__all__"
 
 
 class DokumentsNeedySerializers(serializers.ModelSerializer):
     file_url = serializers.FileField(source="document.url")
-
     class Meta:
         model = DokumentsNeedy
         fields = "__all__"  
@@ -136,3 +139,55 @@ class VolunteerAssignmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = VolunteerAssignment
         fields = '__all__'
+
+
+class AddAmountSerializer(serializers.Serializer):
+    amount = serializers.IntegerField(min_value=1)
+
+    def update(self, instance, validated_data):
+        instance.add_to_collected(validated_data['amount'])
+        return instance
+
+
+class NeedyDisplayPhotoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NeedyDisplayPhoto
+        fields = ["photo"]
+
+class NeedyDisplayDocumentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NeedyDisplayDocument
+        fields = ["document"]
+
+class NeedyDisplaySerializers(serializers.ModelSerializer):
+    photos = NeedyDisplayPhotoSerializer(many=True, read_only=True)
+    documents = NeedyDisplayDocumentSerializer(many=True, read_only=True)
+
+    def update(self, instance, validated_data):
+        instance.collected = validated_data.get('collected', instance.collected)
+        instance.save()
+        return instance
+
+    class Meta:
+        model = NeedyDisplay
+        fields = "__all__"
+
+
+
+class UpdateCollectedSerializer(serializers.Serializer):
+    collected = serializers.DecimalField(max_digits=10, decimal_places=2)
+
+    def update(self, instance, validated_data):
+        collected_value = validated_data.get('collected', instance.collected)
+        
+        instance.collected = collected_value
+        instance.save()
+
+        try:
+            needy_display = NeedyDisplay.objects.get(needy_profile=instance)
+            needy_display.collected = collected_value
+            needy_display.save()
+        except NeedyDisplay.DoesNotExist:
+            pass 
+
+        return instance

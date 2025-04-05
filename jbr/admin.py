@@ -1,7 +1,7 @@
 from pyclbr import Class
 from django.contrib import admin
 from ckeditor_uploader.widgets import CKEditorUploadingWidget
-from jbr.models import AboutUs, Guarantee, Founders, Volunteer, Dokument, News, NeedyProfile, Contacts, HelpedNeedy, Bank, NeedyProfilePhoto, DokumentsNeedy, Application_needy
+from jbr.models import AboutUs, Guarantee, Founders, Volunteer, Dokument, News, NeedyProfile, Contacts, HelpedNeedy, Bank, NeedyProfilePhoto, DokumentsNeedy, Application_needy, NeedyDisplay, NeedyDisplayPhoto, NeedyDisplayDocument
 from django import forms
 from django.utils.html import format_html
 
@@ -24,7 +24,7 @@ class NeedyProfileAdmin(admin.ModelAdmin):
     list_display = ("phone_number", "diagnosis", "treatment", "sum", "collected", "active", "password")  
     list_filter = ("phone_number", "active")  
     list_editable = ("active",)
-    search_fields = ("phone_number",)  # Поиск по номеру
+    search_fields = ("phone_number",)  
     inlines = [NeedyProfilePhotoInline, DokumentsNeedyInline, VolunteerNeedyInline]  
 
 
@@ -72,11 +72,6 @@ class HelpedNeedyAdmin(admin.ModelAdmin):
     list_display = ('name', 'surname', 'img', 'age', 'diagnosis', 'treatment')
     list_filter = ('name', 'surname', 'age')
 
-    def display_photo(self, obj):
-        if obj.img:
-            return format_html('<img src="{}" width="50" height="50" style="border-radius: 10px;" />', obj.photo.url)
-        return "Нет фото"
-    display_photo.short_description = "Фото"
 
 
 @admin.register(Bank)
@@ -96,4 +91,23 @@ class AplicationAdmin(admin.ModelAdmin):
     list_display = ('name', 'phone_number')
 
 
-    
+class NeedyDisplayPhotoInline(admin.TabularInline):
+    model = NeedyDisplayPhoto
+    extra = 1
+
+class NeedyDisplayDocumentInline(admin.TabularInline):
+    model = NeedyDisplayDocument
+    extra = 1
+
+@admin.register(NeedyDisplay)
+class NeedyDislplayAdmin(admin.ModelAdmin):
+    list_display = ('name', 'surname', 'age')
+    inlines = [NeedyDisplayPhotoInline, NeedyDisplayDocumentInline]
+
+@admin.register(NeedyDisplayPhoto)
+class NeedyDisplayPhotoAdmin(admin.ModelAdmin):
+    list_display = ("needy_display", "photo")
+
+@admin.register(NeedyDisplayDocument)
+class NeedyDisplayDocumentAdmin(admin.ModelAdmin):
+    list_display = ("needy_display", "document")

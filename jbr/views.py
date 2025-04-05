@@ -1,10 +1,11 @@
 from rest_framework import generics, status, viewsets
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.views import APIView
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
-from decimal import Decimal
 from rest_framework.views import APIView
 from jbr.models import  AboutUs, Guarantee, Founders, Volunteer, Dokument, News, Contacts, HelpedNeedy, Bank, Application_needy, NeedyProfile
 from jbr.serializers import *
@@ -13,7 +14,6 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 import requests
 import os
-
 
 
 class NeedyProfileView(viewsets.ModelViewSet):
@@ -64,26 +64,33 @@ class FoundersView(generics.ListAPIView):
 class VolunteerView(generics.ListCreateAPIView):
     queryset = Volunteer.objects.all()
     serializer_class = VolunteerSerializer
-    permission_classes = [AllowAny]  
+    permission_classes = [IsAuthenticated] 
 
     def perform_create(self, serializer):
-        volunteer_profile = serializer.save()  
-        user = volunteer_profile.user  
-        refresh = RefreshToken.for_user(user)
+        if not self.request.user.is_authenticated:
+            raise PermissionDenied("Вы должны быть аутентифицированы.")
+
+        try:
+            patient_profile = NeedyProfile.objects.get(user=self.request.user)
+        except NeedyProfile.DoesNotExist:
+            raise PermissionDenied("У вас нет профиля пациента.")
+
+        volunteer_profile = serializer.save(needy_profile=patient_profile)
+
+        refresh = RefreshToken.for_user(self.request.user)
         access_token = str(refresh.access_token)
 
         return Response({
             "message": "VolunteerProfile успешно создан",
             "access": access_token,
             "refresh": str(refresh),
-            "phone_number": volunteer_profile.phone_number
+            "phone_number": volunteer_profile.needy_profile.phone_number
         }, status=status.HTTP_201_CREATED)
 
 
 class VolunteerAssignment(viewsets.ModelViewSet):
     queryset = VolunteerAssignment.objects.all()
     serializer_class = VolunteerAssignmentSerializer
-    permission_classes = [AllowAny]  
 
     def perform_create(self, serializer):
         needy_id = self.request.data.get('needy_profile')
@@ -122,6 +129,9 @@ class BankView(generics.ListCreateAPIView):
     serializer_class =  BankSerializers
 
 
+class NeedyDisplayView(generics.ListAPIView):
+    queryset = NeedyDisplay.objects.all()
+    serializer_class = NeedyDisplaySerializers
 
 
 TELEGRAM_BOT_TOKEN = "7699655524:AAEzQoU_cTWp5A8hsTOvPW_3E5bOD2u2i0A"
@@ -164,4 +174,38 @@ class ApplicationView(generics.ListCreateAPIView):
 
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AddAmountView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        profile = NeedyProfile.objects.get(user=request.user)
+
+        serializer = AddAmountSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.update(profile, serializer.validated_data)
+
+            try:
+                needy_display = NeedyDisplay.objects.get(needy_profile=profile)
+                needy_display.collected = profile.collected
+                needy_display.save()
+            except NeedyDisplay.DoesNotExist:
+                NeedyDisplay.objects.create(
+                    needy_profile=profile,
+                    name=profile.name,
+                    surname=profile.surname,
+                    age=profile.age,
+                    diagnosis=profile.diagnosis,
+                    treatment=profile.treatment,
+                    sum=profile.sum,
+                    collected=profile.collected,
+                )
+
+            return Response(
+                {"message": "Сумма успешно добавлена", "collected": profile.collected},
+                status=status.HTTP_200_OK
+            )
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
