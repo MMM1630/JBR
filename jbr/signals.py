@@ -1,11 +1,9 @@
 from django.db import transaction
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from .models import NeedyProfile, HelpedNeedy, NeedyDisplay, NeedyDisplayPhoto, NeedyDisplayDocument, DokumentsNeedy, NeedyProfilePhoto
+from .models import NeedyProfile, HelpedNeedy, NeedyDisplay, NeedyDisplayPhoto, NeedyDisplayDocument, DokumentsNeedy, NeedyProfilePhoto, HelpedNeedyPhoto
 from decimal import Decimal
 import logging
-
-
 
 
 logger = logging.getLogger(__name__)
@@ -17,7 +15,7 @@ def move_to_helped(sender, instance, **kwargs):
             logger.info(f"Moving NeedyProfile {instance.id} to HelpedNeedy...")
             
             def move():
-                HelpedNeedy.objects.create(
+                helped_needy = HelpedNeedy.objects.create(
                     name=instance.name,
                     surname=instance.surname,
                     age=instance.age,
@@ -26,6 +24,11 @@ def move_to_helped(sender, instance, **kwargs):
                     sum=instance.sum,
                     collected=instance.collected,
                 )
+
+                photos = NeedyProfilePhoto.objects.filter(needy_profile=instance)
+                for photo in photos:
+                    HelpedNeedyPhoto.objects.create(helped_needy=helped_needy, photo=photo.photo)
+
                 logger.info(f"Created HelpedNeedy for {instance.id}. Deleting NeedyProfile...")
                 instance.delete()
             

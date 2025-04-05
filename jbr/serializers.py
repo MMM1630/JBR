@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from jbr.models import AboutUs, Guarantee, Founders, Volunteer, Dokument, News, NeedyProfile, Contacts, HelpedNeedy, Bank,  Application_needy, NeedyProfile, NeedyProfilePhoto, DokumentsNeedy, VolunteerAssignment, NeedyDisplay, NeedyDisplayDocument, NeedyDisplayPhoto 
+from jbr.models import AboutUs, Guarantee, Founders, Volunteer, Dokument, News, NeedyProfile, Contacts, HelpedNeedy, Bank,  Application_needy, NeedyProfile, NeedyProfilePhoto, DokumentsNeedy, VolunteerAssignment, NeedyDisplay, NeedyDisplayDocument, NeedyDisplayPhoto, HelpedNeedyPhoto 
 from django.core.exceptions import ValidationError
 from django.contrib.auth.password_validation import validate_password
 from django.utils.translation import gettext_lazy as _
@@ -60,24 +60,17 @@ class ContactsSerializers(serializers.ModelSerializer):
         fields = "__all__"
 
 class HelpedNeedySerializers(serializers.ModelSerializer):
-    photos = serializers.SerializerMethodField()
+    photos = serializers.SerializerMethodField() 
     class Meta:
         model = HelpedNeedy
         fields = "__all__"
 
-    def create(self, validated_data):
-        photos = validated_data.pop('photos', [])  
-        helped_needy = HelpedNeedy.objects.create(**validated_data)
-
-        if photos:
-            helped_needy.photos.set(photos) 
-            helped_needy.img = photos[0].image 
-            helped_needy.save()
-
-        return helped_needy
-    
     def get_photos(self, obj):
-        return ["http://212.193.24.72" + photo.photo.url for photo in obj.photos.all()]
+        request = self.context.get('request')
+        photos = HelpedNeedyPhoto.objects.filter(helped_needy=obj)
+        return [{"photo_url": request.build_absolute_uri(photo.photo.url)} for photo in photos if photo.photo]
+    
+
 
 
 class BankSerializers(serializers.ModelSerializer):

@@ -9,6 +9,7 @@ django-ckeditor==6.7.2
 django-cors-headers==4.7.0
 django-jazzmin==3.0.1
 django-js-asset==3.1.2
+django-model-utils==5.0.0
 django-qrcode==0.3
 django-request==1.7.0
 django-select2==8.4.0

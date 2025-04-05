@@ -74,8 +74,6 @@ class News(models.Model):
         return f"{self.title}"
 
 
-def generate_password():
-    return ''.join(random.choices(string.ascii_letters + string.digits, k=8))
 
 class NeedyProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
@@ -89,15 +87,12 @@ class NeedyProfile(models.Model):
     sum_usd = models.FloatField("Сумма в долларах", null=True, blank=True, editable=False)
     collected = models.IntegerField(verbose_name="Собранная сумма", null=True, blank=True)
     active = models.BooleanField("Сбор", default=True, null=True, blank=True)
-    password = models.CharField("Пароль", max_length=8, default=generate_password, editable=False)
 
     def save(self, *args, **kwargs):
         if not self.user and self.phone_number:  
             username = f"user_{self.phone_number}"  
-            password = generate_password()
-            user = User.objects.create_user(username=username, password=password)
+            user = User.objects.create_user(username=username)
             self.user = user  
-            self.password = password  
 
         if self.sum:
             exchange_rate = 0.012 
@@ -174,7 +169,6 @@ class Contacts(models.Model):
 
 
 class HelpedNeedy(models.Model):
-    img = models.ImageField(upload_to="helped_needy/",  verbose_name="Фото")
     name = models.CharField("Имя", max_length=255)
     surname = models.CharField("Фамилия", max_length=255)
     age = models.IntegerField('Возраст')
@@ -182,7 +176,6 @@ class HelpedNeedy(models.Model):
     treatment = models.CharField("Лечение", max_length=255)
     sum = models.IntegerField(verbose_name="Сумма для сбора", null=True, blank=True)
     collected = models.IntegerField(verbose_name="Собранная сумма", null=True, blank=True)
-    photos = models.ManyToManyField(NeedyProfilePhoto, related_name='helped_needy_photos', blank=True)
 
 
     class Meta:

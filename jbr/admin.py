@@ -1,7 +1,7 @@
 from pyclbr import Class
 from django.contrib import admin
 from ckeditor_uploader.widgets import CKEditorUploadingWidget
-from jbr.models import AboutUs, Guarantee, Founders, Volunteer, Dokument, News, NeedyProfile, Contacts, HelpedNeedy, Bank, NeedyProfilePhoto, DokumentsNeedy, Application_needy, NeedyDisplay, NeedyDisplayPhoto, NeedyDisplayDocument
+from jbr.models import AboutUs, Guarantee, Founders, Volunteer, Dokument, News, NeedyProfile, Contacts, HelpedNeedy, Bank, NeedyProfilePhoto, DokumentsNeedy, Application_needy, NeedyDisplay, NeedyDisplayPhoto, NeedyDisplayDocument, HelpedNeedyPhoto
 from django import forms
 from django.utils.html import format_html
 
@@ -21,7 +21,7 @@ class VolunteerNeedyInline(admin.TabularInline):
 
 @admin.register(NeedyProfile)
 class NeedyProfileAdmin(admin.ModelAdmin):
-    list_display = ("phone_number", "diagnosis", "treatment", "sum", "collected", "active", "password")  
+    list_display = ("phone_number", "diagnosis", "treatment", "sum", "collected", "active")  
     list_filter = ("phone_number", "active")  
     list_editable = ("active",)
     search_fields = ("phone_number",)  
@@ -67,11 +67,15 @@ class ContactsAdmin(admin.ModelAdmin):
     list_display = ('title', 'phone_number', 'email', 'geolocation')
 
 
+class HelpedNeedyPhotoInline(admin.TabularInline):
+    model = HelpedNeedyPhoto
+    extra = 1
+
 @admin.register(HelpedNeedy)
 class HelpedNeedyAdmin(admin.ModelAdmin):
-    list_display = ('name', 'surname', 'img', 'age', 'diagnosis', 'treatment')
+    list_display = ('name', 'surname', 'age', 'diagnosis', 'treatment')
     list_filter = ('name', 'surname', 'age')
-
+    inlines = [HelpedNeedyPhotoInline]
 
 
 @admin.register(Bank)
